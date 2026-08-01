@@ -1,0 +1,158 @@
+models:
+  - name: dim_community_area
+    description: >
+      The 77 Chicago community areas plus an UNKNOWN member (0) used by the facts when a record
+      has no area. Join facts and marts to this table on community_area.
+    constraints:
+      - type: primary_key
+        columns: [community_area]
+    columns:
+      - name: community_area
+        data_type: integer
+        description: Community area number, 1 to 77, or 0 for unknown.
+        data_tests:
+          - unique
+          - not_null
+      - name: community_area_name
+        data_type: varchar
+        description: Community area name in upper case, for example AUSTIN or LINCOLN PARK.
+        data_tests:
+          - not_null
+
+  - name: fct_crimes_daily
+    description: >
+      Crime counts per day, community area and primary type, for incidents on or after the
+      start_date var (2025-01-01). One row per (crime_date, community_area, primary_type) that
+      had at least one incident. Rebuilt from stg_crimes on every run.
+    constraints:
+      - type: primary_key
+        columns: [crime_date, community_area, primary_type]
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "crime_date || '|' || community_area || '|' || primary_type"
+    columns:
+      - name: crime_date
+        data_type: date
+        description: Local date the incidents occurred.
+        data_tests:
+          - not_null
+      - name: community_area
+        data_type: integer
+        description: Community area number; 0 when the record has no area.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_community_area')
+                field: community_area
+      - name: primary_type
+        data_type: varchar
+        description: Primary IUCR category, for example THEFT or BATTERY.
+        data_tests:
+          - not_null
+      - name: incidents
+        data_type: bigint
+        description: Number of crime records.
+      - name: arrests
+        data_type: bigint
+        description: Number of those records with an arrest.
+      - name: domestic_incidents
+        data_type: bigint
+        description: Number of those records flagged domestic.
+
+  - name: fct_311_daily
+    description: >
+      311 activity per day, community area and request type, for non-duplicate requests.
+      A request counts as opened on the day it was created and as closed on the day it was
+      closed (completed or canceled); both days must be on or after the start_date var
+      (2025-01-01). Rebuilt from stg_311_requests on every run.
+    constraints:
+      - type: primary_key
+        columns: [activity_date, community_area, sr_type]
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "activity_date || '|' || community_area || '|' || sr_type"
+    columns:
+      - name: activity_date
+        data_type: date
+        description: Local date of the activity (creation for opened, closing for closed).
+        data_tests:
+          - not_null
+      - name: community_area
+        data_type: integer
+        description: Community area number; 0 when the request has no area.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_community_area')
+                field: community_area
+      - name: sr_type
+        data_type: varchar
+        description: Request type, for example "Pothole in Street Complaint".
+        data_tests:
+          - not_null
+      - name: requests_opened
+        data_type: bigint
+        description: Requests created that day.
+      - name: requests_closed
+        data_type: bigint
+        description: Requests closed that day.
+      - name: median_days_to_close
+        data_type: double
+        description: Median days from creation to closing over the requests closed that day; null when none closed.
+
+  - name: mart_area_month
+    description: >
+      One row per calendar month and community area combining crime and 311 activity from
+      2025-01 on. Crime columns come from fct_crimes_daily, opened and closed counts from
+      fct_311_daily, and the median close time is recomputed from stg_311_requests so it is a
+      true monthly median. The current month is partial.
+    constraints:
+      - type: primary_key
+        columns: [month, community_area]
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "month || '|' || community_area"
+    columns:
+      - name: month
+        data_type: date
+        description: First day of the month.
+        data_tests:
+          - not_null
+      - name: community_area
+        data_type: integer
+        description: Community area number; 0 for records without an area.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_community_area')
+                field: community_area
+      - name: community_area_name
+        data_type: varchar
+        description: Community area name from dim_community_area.
+      - name: incidents
+        data_type: bigint
+        description: Crime records that occurred in the month.
+      - name: arrests
+        data_type: bigint
+        description: Of those, records with an arrest.
+      - name: arrest_rate
+        data_type: double
+        description: arrests / incidents, null when there were no incidents.
+      - name: domestic_incidents
+        data_type: bigint
+        description: Of those, records flagged domestic.
+      - name: requests_opened
+        data_type: bigint
+        description: Non-duplicate 311 requests created in the month.
+      - name: requests_closed
+        data_type: bigint
+        description: Non-duplicate 311 requests closed in the month.
+      - name: median_days_to_close
+        data_type: double
+        description: Median days to close over the non-duplicate requests closed in the month.
