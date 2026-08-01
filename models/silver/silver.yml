@@ -1,0 +1,153 @@
+models:
+  - name: stg_crimes
+    description: >
+      One row per crime record, typed and holding the latest version seen in bronze.
+      Incremental on crime_id: each run merges the bronze rows whose updated_on falls in the
+      min_date/max_date window passed by Dagster and keeps the newest version per id.
+      Covers every record changed since the first loaded partition, so it also holds older
+      incidents that the city revised in that period.
+    columns:
+      - name: crime_id
+        data_type: bigint
+        description: Unique id of the crime record (the portal's id column).
+        constraints:
+          - type: not_null
+        data_tests:
+          - unique
+          - not_null
+      - name: case_number
+        data_type: varchar
+        description: Chicago Police Department records division number.
+      - name: occurred_at
+        data_type: timestamp
+        description: Local date and time the incident occurred (Chicago time).
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+      - name: block
+        data_type: varchar
+        description: Partially redacted address, block level.
+      - name: iucr
+        data_type: varchar
+        description: Illinois Uniform Crime Reporting code.
+      - name: primary_type
+        data_type: varchar
+        description: Primary IUCR category, for example THEFT or BATTERY.
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+      - name: description
+        data_type: varchar
+        description: Secondary IUCR description, a subcategory of primary_type.
+      - name: location_description
+        data_type: varchar
+        description: Kind of place where the incident occurred.
+      - name: arrest
+        data_type: boolean
+        description: True if an arrest was made.
+        data_tests:
+          - not_null
+      - name: domestic
+        data_type: boolean
+        description: True if the incident was domestic-related under the Illinois Domestic Violence Act.
+        data_tests:
+          - not_null
+      - name: beat
+        data_type: varchar
+        description: Police beat, the smallest police geographic area.
+      - name: district
+        data_type: varchar
+        description: Police district.
+      - name: ward
+        data_type: integer
+        description: City Council ward.
+      - name: community_area
+        data_type: integer
+        description: Community area number 1 to 77; null when the source has no area or area 0.
+      - name: fbi_code
+        data_type: varchar
+        description: FBI National Incident-Based Reporting System offense code.
+      - name: updated_on
+        data_type: timestamp
+        description: Local timestamp of the last change to the record on the portal.
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+
+  - name: stg_311_requests
+    description: >
+      One row per 311 service request (information-only calls excluded), typed and holding the
+      latest version seen in bronze. Incremental on sr_number: each run merges the bronze rows
+      whose last_modified_date falls in the min_date/max_date window passed by Dagster and keeps
+      the newest version per request. Covers every request changed since the first loaded
+      partition, including older requests closed in that period.
+    columns:
+      - name: sr_number
+        data_type: varchar
+        description: Service request number, unique per request.
+        constraints:
+          - type: not_null
+        data_tests:
+          - unique
+          - not_null
+      - name: sr_type
+        data_type: varchar
+        description: Request type, for example "Pothole in Street Complaint".
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+      - name: sr_short_code
+        data_type: varchar
+        description: Short code for the request type.
+      - name: owner_department
+        data_type: varchar
+        description: City department that owns the request.
+      - name: status
+        data_type: varchar
+        description: Open, Completed or Canceled.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Open", "Completed", "Canceled"]
+      - name: origin
+        data_type: varchar
+        description: Channel the request came in through, for example Phone Call or Mobile Device.
+      - name: created_at
+        data_type: timestamp
+        description: Local timestamp the request was created.
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+      - name: closed_at
+        data_type: timestamp
+        description: Local timestamp the request was closed (completed or canceled); null while open.
+      - name: last_modified_at
+        data_type: timestamp
+        description: Local timestamp of the last change to the request.
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+      - name: is_duplicate
+        data_type: boolean
+        description: True if the request was marked as a duplicate of another request.
+      - name: is_legacy
+        data_type: boolean
+        description: True for requests migrated from the pre-2018 311 system.
+      - name: parent_sr_number
+        data_type: varchar
+        description: For duplicates and child requests, the request they point to.
+      - name: community_area
+        data_type: integer
+        description: Community area number 1 to 77; null when the source has no area.
+      - name: ward
+        data_type: integer
+        description: City Council ward.
+      - name: days_to_close
+        data_type: double
+        description: Days from created_at to closed_at, to three decimals; null while open.

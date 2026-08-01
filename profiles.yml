@@ -1,0 +1,11 @@
+chicago_lakehouse:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/warehouse.duckdb
+      threads: 4
+    ci:
+      type: duckdb
+      path: ci.duckdb
+      threads: 4

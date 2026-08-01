@@ -1,0 +1,24 @@
+name: chicago_lakehouse
+version: "1.0.0"
+profile: chicago_lakehouse
+
+vars:
+  min_date: "1900-01-01"
+  max_date: "2100-01-01"
+  start_date: "2025-01-01"
+
+models:
+  chicago_lakehouse:
+    +contract:
+      enforced: true
+    silver:
+      +schema: silver
+      +meta:
+        dagster:
+          group: silver
+    gold:
+      +schema: gold
+      +materialized: table
+      +meta:
+        dagster:
+          group: gold

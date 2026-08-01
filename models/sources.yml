@@ -1,0 +1,29 @@
+sources:
+  - name: bronze
+    description: Raw extracts from the Chicago Data Portal (Socrata), landed by the Dagster bronze assets as parquet. All values are kept as the API returned them (text, plus booleans for checkbox fields).
+    meta:
+      external_location: "{{ 'ci/fixtures' if target.name == 'ci' else 'data/bronze' }}/{name}/*.parquet"
+    tables:
+      - name: crimes
+        description: Crimes 2001 to present (dataset ijzp-q8t2). One file per day of updated_on, so a crime revised on several days can appear in several files with different versions.
+        columns:
+          - name: id
+            description: Unique crime record id.
+          - name: date
+            description: Local date and time the incident occurred.
+          - name: updated_on
+            description: Local timestamp of the last change to the record on the portal. Partition key of the bronze files.
+      - name: requests_311
+        description: 311 service requests (dataset v6vf-nfxy) without the "311 INFORMATION ONLY CALL" type. One file per day of last_modified_date.
+        columns:
+          - name: sr_number
+            description: Service request number, unique per request.
+          - name: last_modified_date
+            description: Local timestamp of the last change to the request. Partition key of the bronze files.
+      - name: community_areas
+        description: Chicago community area boundaries (dataset igwz-8jzy), number and name only.
+        columns:
+          - name: area_numbe
+            description: Community area number, 1 to 77.
+          - name: community
+            description: Community area name in upper case.
