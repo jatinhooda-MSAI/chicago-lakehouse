@@ -1,0 +1,120 @@
+models:
+  - name: metricflow_time_spine
+    description: One row per day from 2025-01-01 through 2027-12-31. Time spine for the MetricFlow metrics.
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        data_type: date
+        description: Calendar day.
+        granularity: day
+        data_tests:
+          - unique
+          - not_null
+
+semantic_models:
+  - name: community_areas
+    description: Community areas, so metrics can be grouped by area name.
+    model: ref('dim_community_area')
+    entities:
+      - name: community_area
+        type: primary
+    dimensions:
+      - name: community_area_name
+        type: categorical
+
+  - name: crimes_daily
+    description: Daily crime counts by community area and primary type.
+    model: ref('fct_crimes_daily')
+    defaults:
+      agg_time_dimension: crime_date
+    primary_entity: crime_day
+    entities:
+      - name: community_area
+        type: foreign
+    dimensions:
+      - name: crime_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: primary_type
+        type: categorical
+    measures:
+      - name: incidents
+        description: Crime records.
+        agg: sum
+      - name: arrests
+        description: Crime records with an arrest.
+        agg: sum
+
+  - name: service_requests
+    description: All 311 requests at request grain, duplicates included; the metrics filter duplicates out.
+    model: ref('stg_311_requests')
+    defaults:
+      agg_time_dimension: created_at
+    entities:
+      - name: service_request
+        type: primary
+        expr: sr_number
+      - name: community_area
+        type: foreign
+    dimensions:
+      - name: created_at
+        type: time
+        type_params:
+          time_granularity: day
+      - name: closed_at
+        type: time
+        type_params:
+          time_granularity: day
+      - name: sr_type
+        type: categorical
+      - name: status
+        type: categorical
+      - name: is_duplicate
+        type: categorical
+    measures:
+      - name: requests
+        description: 311 requests, counted on the day they were created.
+        agg: count
+        expr: sr_number
+      - name: days_to_close
+        description: Median days from creation to closing, on the day the request closed.
+        agg: median
+        expr: days_to_close
+        agg_time_dimension: closed_at
+
+metrics:
+  - name: incidents
+    label: Incidents
+    description: Number of crime records, by the day the incident occurred.
+    type: simple
+    type_params:
+      measure: incidents
+  - name: arrests
+    label: Arrests
+    description: Number of crime records with an arrest.
+    type: simple
+    type_params:
+      measure: arrests
+  - name: arrest_rate
+    label: Arrest rate
+    description: Share of crime records with an arrest.
+    type: ratio
+    type_params:
+      numerator: arrests
+      denominator: incidents
+  - name: requests_opened
+    label: 311 requests opened
+    description: Non-duplicate 311 requests, by the day they were created.
+    type: simple
+    type_params:
+      measure: requests
+    filter: "{{ Dimension('service_request__is_duplicate') }} = false"
+  - name: median_days_to_close
+    label: Median days to close
+    description: Median days to close non-duplicate 311 requests, by the day they were closed.
+    type: simple
+    type_params:
+      measure: days_to_close
+    filter: "{{ Dimension('service_request__is_duplicate') }} = false"
