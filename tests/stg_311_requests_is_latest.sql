@@ -1,3 +1,5 @@
+{{ config(meta={'dagster': {'ref': {'name': 'stg_311_requests'}}}) }}
+
 select b.sr_number
 from {{ source('bronze', 'requests_311') }} as b
 left join {{ ref('stg_311_requests') }} as s using (sr_number)
