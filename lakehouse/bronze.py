@@ -36,18 +36,18 @@ COMMUNITY_AREAS = pa.schema({"area_numbe": STR, "community": STR})
 
 
 def fetch(dataset: str, schema: pa.Schema, where: str | None = None) -> pa.Table:
-    rows = []
+    pages = []
     while True:
         response = session.get(
             f"https://data.cityofchicago.org/resource/{dataset}.json",
-            params={"$select": ",".join(schema.names), "$where": where, "$order": ":id", "$limit": PAGE, "$offset": len(rows)},
+            params={"$select": ",".join(schema.names), "$where": where, "$order": ":id", "$limit": PAGE, "$offset": PAGE * len(pages)},
             timeout=600,
         )
         response.raise_for_status()
-        page = response.json()
-        rows += page
-        if len(page) < PAGE:
-            return pa.Table.from_pylist(rows, schema=schema)
+        rows = response.json()
+        pages.append(pa.Table.from_pylist(rows, schema=schema))
+        if len(rows) < PAGE:
+            return pa.concat_tables(pages)
 
 
 def write(table: pa.Table, path: Path) -> None:
@@ -59,22 +59,19 @@ def write(table: pa.Table, path: Path) -> None:
 
 def volume_check(name: str, keys: list[str]) -> dg.AssetCheckResult:
     counts = {p.stem.removeprefix("dt="): pq.read_metadata(p).num_rows for p in (BRONZE / name).glob("dt=*.parquet")}
-    checked, flagged = 0, []
+    checked, flagged = [], []
     for key in keys:
         day = date.fromisoformat(key)
         history = [counts[d] for i in range(1, 15) if (d := str(day - timedelta(days=i))) in counts]
-        if not history:
-            continue
-        checked += 1
-        median = statistics.median(history)
-        if not 0.5 * median <= counts[key] <= 2 * median:
-            flagged.append(f"{key}: {counts[key]} rows, trailing median {median:g}")
-    return dg.AssetCheckResult(
-        check_name="volume",
-        passed=not flagged,
-        severity=dg.AssetCheckSeverity.WARN,
-        metadata={"partitions_checked": checked, "out_of_band": len(flagged), "flagged": "\n".join(flagged)},
-    )
+        if history:
+            median = statistics.median(history)
+            checked.append(f"{key}: {counts[key]} rows, trailing median {median:g}")
+            if not 0.5 * median <= counts[key] <= 2 * median:
+                flagged.append(checked[-1])
+    metadata = {"partitions_checked": len(checked), "out_of_band": len(flagged), "flagged": "\n".join(flagged)}
+    if checked:
+        metadata["last_partition"] = checked[-1]
+    return dg.AssetCheckResult(check_name="volume", passed=not flagged, severity=dg.AssetCheckSeverity.WARN, metadata=metadata)
 
 
 def bronze_asset(name: str, dataset: str, schema: pa.Schema, modified: str, extra: str = "") -> dg.AssetsDefinition:
@@ -83,7 +80,14 @@ def bronze_asset(name: str, dataset: str, schema: pa.Schema, modified: str, extr
         group_name="bronze",
         partitions_def=daily,
         backfill_policy=dg.BackfillPolicy.single_run(),
-        check_specs=[dg.AssetCheckSpec("volume", asset=["bronze", name])],
+        check_specs=[
+            dg.AssetCheckSpec(
+                "volume",
+                asset=["bronze", name],
+                partitions_def=daily,
+                description="Rows per partition vs the median of the previous 14 daily partitions; warns outside 0.5x to 2x.",
+            )
+        ],
         kinds={"socrata", "parquet"},
         description=f"Rows of Socrata dataset {dataset} whose {modified} falls on the partition day, one parquet file per day.",
     )

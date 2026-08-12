@@ -34,7 +34,7 @@ defs = dg.Definitions(
     assets=[community_areas, crimes, requests_311, warehouse],
     asset_checks=freshness,
     jobs=[daily_refresh],
-    schedules=[dg.build_schedule_from_partitioned_job(daily_refresh, hour_of_day=9)],
+    schedules=[dg.build_schedule_from_partitioned_job(daily_refresh, hour_of_day=10)],
     sensors=[dg.build_sensor_for_freshness_checks(freshness_checks=freshness)],
     resources={"dbt": DbtCliResource(project_dir=project)},
 )
