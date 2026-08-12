@@ -1,0 +1,20 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv sync --frozen
+      - name: dbt build on fixtures
+        run: uv run dbt build --target ci
+      - name: incremental dbt build over a window
+        run: uv run dbt build --target ci --vars '{"min_date": "2026-10-02", "max_date": "2026-10-06"}'
+      - name: dagster definitions load
+        run: uv run dagster definitions validate -m lakehouse.definitions
