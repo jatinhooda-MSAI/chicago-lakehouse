@@ -15,8 +15,10 @@ def runs(instance: dg.DagsterInstance) -> None:
             partitions = f"{tags['dagster/asset_partition_range_start']}...{tags['dagster/asset_partition_range_end']}"
         else:
             partitions = tags.get("dagster/partition", "unpartitioned")
+        materialized = {e.dagster_event.asset_key for e in instance.all_logs(run.run_id, of_type=dg.DagsterEventType.ASSET_MATERIALIZATION)}
         minutes = (record.end_time - record.start_time) / 60
-        print(f"  {run.job_name} {partitions}: {run.status.value}, {len(run.asset_selection or [])} assets, {minutes:.1f} min")
+        print(f"  {run.job_name} {partitions}: {run.status.value}, {len(materialized)} assets materialized, {minutes:.1f} min")
+        print("    steps: " + ", ".join(f"{s.step_key} {s.end_time - s.start_time:.0f}s" for s in instance.get_run_step_stats(run.run_id)))
         events = instance.all_logs(run.run_id, of_type=dg.DagsterEventType.ASSET_CHECK_EVALUATION)
         evaluations = [e.dagster_event.event_specific_data for e in events]
         print(f"    checks passed {sum(e.passed for e in evaluations)} of {len(evaluations)}")
@@ -43,7 +45,8 @@ def layers() -> None:
     print("warehouse")
     con = duckdb.connect(str(WAREHOUSE), read_only=True)
     for schema, table in con.execute("select schema_name, table_name from duckdb_tables() order by schema_name desc, table_name").fetchall():
-        print(f"  {schema}.{table}: {con.execute(f'select count(*) from {schema}.{table}').fetchone()[0]} rows")
+        rows, digest = con.execute(f"select count(*), bit_xor(hash(t)) from {schema}.{table} as t").fetchone()
+        print(f"  {schema}.{table}: {rows} rows, content hash {digest}")
     print(f"  file size {WAREHOUSE.stat().st_size / 1e6:.1f} MB")
 
 
