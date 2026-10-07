@@ -1,0 +1,111 @@
+commit 1073424, clean clone
+$ uv sync --frozen
+ + yarl==1.25.1
+ + zipp==4.1.1
+$ uv run dbt build --target ci
+08:11:09  Running with dbt=1.12.5
+08:11:10  Registered adapter: duckdb=1.11.0
+08:11:10  Unable to do partial parsing because saved manifest not found. Starting full parse.
+08:11:12  Found 7 models, 34 data tests, 3 sources, 5 metrics, 501 macros, 3 semantic models
+08:11:12  
+08:11:12  Concurrency: 4 threads (target='ci')
+08:11:12  
+08:11:12  1 of 41 START sql table model gold.dim_community_area .......................... [RUN]
+08:11:12  2 of 41 START sql table model gold.metricflow_time_spine ....................... [RUN]
+08:11:12  3 of 41 START sql incremental model silver.stg_311_requests .................... [RUN]
+08:11:12  4 of 41 START sql incremental model silver.stg_crimes .......................... [RUN]
+08:11:12  4 of 41 OK created sql incremental model silver.stg_crimes ..................... [OK in 0.26s]
+08:11:12  3 of 41 OK created sql incremental model silver.stg_311_requests ............... [OK in 0.26s]
+08:11:12  2 of 41 OK created sql table model gold.metricflow_time_spine .................. [OK in 0.26s]
+08:11:12  5 of 41 START test not_null_stg_crimes_arrest .................................. [RUN]
+08:11:12  6 of 41 START test not_null_stg_crimes_crime_id ................................ [RUN]
+08:11:12  7 of 41 START test not_null_stg_crimes_domestic ................................ [RUN]
+08:11:12  1 of 41 OK created sql table model gold.dim_community_area ..................... [OK in 0.28s]
+08:11:12  8 of 41 START test not_null_stg_crimes_occurred_at ............................. [RUN]
+08:11:12  7 of 41 PASS not_null_stg_crimes_domestic ...................................... [PASS in 0.07s]
+08:11:12  5 of 41 PASS not_null_stg_crimes_arrest ........................................ [PASS in 0.07s]
+08:11:12  8 of 41 PASS not_null_stg_crimes_occurred_at ................................... [PASS in 0.05s]
+08:11:12  6 of 41 PASS not_null_stg_crimes_crime_id ...................................... [PASS in 0.08s]
+08:11:12  9 of 41 START test not_null_stg_crimes_primary_type ............................ [RUN]
+08:11:12  10 of 41 START test not_null_stg_crimes_updated_on ............................. [RUN]
+08:11:12  11 of 41 START test stg_crimes_is_latest ....................................... [RUN]
+08:11:12  12 of 41 START test unique_stg_crimes_crime_id ................................. [RUN]
+08:11:12  9 of 41 PASS not_null_stg_crimes_primary_type .................................. [PASS in 0.08s]
+08:11:12  13 of 41 START test accepted_values_stg_311_requests_status__Open__Completed__Canceled  [RUN]
+08:11:12  12 of 41 PASS unique_stg_crimes_crime_id ....................................... [PASS in 0.08s]
+08:11:12  10 of 41 PASS not_null_stg_crimes_updated_on ................................... [PASS in 0.09s]
+08:11:12  11 of 41 PASS stg_crimes_is_latest ............................................. [PASS in 0.09s]
+08:11:12  14 of 41 START test not_null_stg_311_requests_created_at ....................... [RUN]
+08:11:12  15 of 41 START test not_null_stg_311_requests_last_modified_at ................. [RUN]
+08:11:12  16 of 41 START test not_null_stg_311_requests_sr_number ........................ [RUN]
+08:11:12  13 of 41 PASS accepted_values_stg_311_requests_status__Open__Completed__Canceled  [PASS in 0.06s]
+08:11:12  14 of 41 PASS not_null_stg_311_requests_created_at ............................. [PASS in 0.06s]
+08:11:12  17 of 41 START test not_null_stg_311_requests_sr_type .......................... [RUN]
+08:11:12  16 of 41 PASS not_null_stg_311_requests_sr_number .............................. [PASS in 0.05s]
+08:11:12  15 of 41 PASS not_null_stg_311_requests_last_modified_at ....................... [PASS in 0.06s]
+08:11:12  18 of 41 START test stg_311_requests_is_latest ................................. [RUN]
+08:11:12  19 of 41 START test unique_stg_311_requests_sr_number .......................... [RUN]
+08:11:12  20 of 41 START test not_null_metricflow_time_spine_date_day .................... [RUN]
+08:11:12  17 of 41 PASS not_null_stg_311_requests_sr_type ................................ [PASS in 0.05s]
+08:11:12  21 of 41 START test unique_metricflow_time_spine_date_day ...................... [RUN]
+08:11:12  19 of 41 PASS unique_stg_311_requests_sr_number ................................ [PASS in 0.06s]
+08:11:12  18 of 41 PASS stg_311_requests_is_latest ....................................... [PASS in 0.06s]
+08:11:12  20 of 41 PASS not_null_metricflow_time_spine_date_day .......................... [PASS in 0.06s]
+08:11:12  22 of 41 START test not_null_dim_community_area_community_area ................. [RUN]
+08:11:12  23 of 41 START test not_null_dim_community_area_community_area_name ............ [RUN]
+08:11:12  24 of 41 START test unique_dim_community_area_community_area ................... [RUN]
+08:11:12  21 of 41 PASS unique_metricflow_time_spine_date_day ............................ [PASS in 0.06s]
+08:11:13  25 of 41 START sql table model gold.fct_crimes_daily ........................... [RUN]
+08:11:13  22 of 41 PASS not_null_dim_community_area_community_area ....................... [PASS in 0.06s]
+08:11:13  26 of 41 START sql table model gold.fct_311_daily .............................. [RUN]
+08:11:13  24 of 41 PASS unique_dim_community_area_community_area ......................... [PASS in 0.06s]
+08:11:13  23 of 41 PASS not_null_dim_community_area_community_area_name .................. [PASS in 0.07s]
+08:11:13  25 of 41 OK created sql table model gold.fct_crimes_daily ...................... [OK in 0.08s]
+08:11:13  27 of 41 START test not_null_fct_crimes_daily_community_area ................... [RUN]
+08:11:13  28 of 41 START test not_null_fct_crimes_daily_crime_date ....................... [RUN]
+08:11:13  29 of 41 START test not_null_fct_crimes_daily_primary_type ..................... [RUN]
+08:11:13  26 of 41 OK created sql table model gold.fct_311_daily ......................... [OK in 0.07s]
+08:11:13  30 of 41 START test relationships_fct_crimes_daily_community_area__community_area__ref_dim_community_area_  [RUN]
+08:11:13  27 of 41 PASS not_null_fct_crimes_daily_community_area ......................... [PASS in 0.06s]
+08:11:13  29 of 41 PASS not_null_fct_crimes_daily_primary_type ........................... [PASS in 0.05s]
+08:11:13  31 of 41 START test unique_fct_crimes_daily_crime_date_community_area_primary_type  [RUN]
+08:11:13  28 of 41 PASS not_null_fct_crimes_daily_crime_date ............................. [PASS in 0.06s]
+08:11:13  32 of 41 START test not_null_fct_311_daily_activity_date ....................... [RUN]
+08:11:13  30 of 41 PASS relationships_fct_crimes_daily_community_area__community_area__ref_dim_community_area_  [PASS in 0.05s]
+08:11:13  33 of 41 START test not_null_fct_311_daily_community_area ...................... [RUN]
+08:11:13  34 of 41 START test not_null_fct_311_daily_sr_type ............................. [RUN]
+08:11:13  31 of 41 PASS unique_fct_crimes_daily_crime_date_community_area_primary_type ... [PASS in 0.06s]
+08:11:13  32 of 41 PASS not_null_fct_311_daily_activity_date ............................. [PASS in 0.07s]
+08:11:13  33 of 41 PASS not_null_fct_311_daily_community_area ............................ [PASS in 0.05s]
+08:11:13  35 of 41 START test relationships_fct_311_daily_community_area__community_area__ref_dim_community_area_  [RUN]
+08:11:13  36 of 41 START test unique_fct_311_daily_activity_date_community_area_sr_type .. [RUN]
+08:11:13  34 of 41 PASS not_null_fct_311_daily_sr_type ................................... [PASS in 0.06s]
+08:11:13  35 of 41 PASS relationships_fct_311_daily_community_area__community_area__ref_dim_community_area_  [PASS in 0.04s]
+08:11:13  36 of 41 PASS unique_fct_311_daily_activity_date_community_area_sr_type ........ [PASS in 0.04s]
+08:11:13  37 of 41 START sql table model gold.mart_area_month ............................ [RUN]
+08:11:13  37 of 41 OK created sql table model gold.mart_area_month ....................... [OK in 0.03s]
+08:11:13  38 of 41 START test not_null_mart_area_month_community_area .................... [RUN]
+08:11:13  39 of 41 START test not_null_mart_area_month_month ............................. [RUN]
+08:11:13  40 of 41 START test relationships_mart_area_month_community_area__community_area__ref_dim_community_area_  [RUN]
+08:11:13  41 of 41 START test unique_mart_area_month_month_community_area ................ [RUN]
+08:11:13  40 of 41 PASS relationships_mart_area_month_community_area__community_area__ref_dim_community_area_  [PASS in 0.05s]
+08:11:13  39 of 41 PASS not_null_mart_area_month_month ................................... [PASS in 0.05s]
+08:11:13  38 of 41 PASS not_null_mart_area_month_community_area .......................... [PASS in 0.05s]
+08:11:13  41 of 41 PASS unique_mart_area_month_month_community_area ...................... [PASS in 0.05s]
+08:11:13  
+08:11:13  Finished running 2 incremental models, 5 table models, 34 data tests in 0 hours 0 minutes and 1.15 seconds (1.15s).
+08:11:13  
+08:11:13  Completed successfully
+08:11:13  
+08:11:13  Done. PASS=41 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=41
+$ uv run dbt build --target ci --vars {"min_date": "2026-10-02", "max_date": "2026-10-06"}
+08:11:19  3 of 41 START sql incremental model silver.stg_311_requests .................... [RUN]
+08:11:19  4 of 41 START sql incremental model silver.stg_crimes .......................... [RUN]
+08:11:19  4 of 41 OK created sql incremental model silver.stg_crimes ..................... [OK in 0.37s]
+08:11:19  3 of 41 OK created sql incremental model silver.stg_311_requests ............... [OK in 0.39s]
+08:11:20  Finished running 2 incremental models, 5 table models, 34 data tests in 0 hours 0 minutes and 1.28 seconds (1.28s).
+08:11:20  Done. PASS=41 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=41
+$ uv run dagster definitions validate -m lakehouse.definitions
+2026-10-07 03:11:31 -0500 - dagster - INFO - Validation successful for code location lakehouse.definitions.
+2026-10-07 03:11:31 -0500 - dagster - INFO - All code locations passed validation.
+all steps: 29s
